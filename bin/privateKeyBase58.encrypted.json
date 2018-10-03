@@ -1,0 +1,8 @@
+{
+  "unprotected": {
+    "alg": "PBES2-HS512+A256KW",
+    "p2c": 4096,
+    "p2s": "J2dMSRhJAF2uwFzGN4bb-EZL95Wwptmw4XIZy2ihPu4"
+  },
+  "encrypted_key": "iMoHJZF-1qvaG2BxmJB6zgOp9q-Szx-pN0oE-hojM50eEdJF6rif2XPTtcsnyUqRlKguVDpCd7tHGi-CEHgitO2U3CqDAPOD"
+}

@@ -1,0 +1,336 @@
+#!/usr/bin/env node
+/**
+ * A client for interacting with a Web Ledger Node.
+ *
+ * Copyright (c) 2018 Digital Bazaar, Inc. All rights reserved.
+ */
+'use strict';
+
+const bs58 = require('bs58');
+const fs = require('fs');
+const inquirer = require('inquirer');
+const util = require('util');
+const yargs = require('yargs');
+const WebLedgerClient = require('web-ledger-client').client;
+const lib = require('../lib');
+const contexts = require('web-ledger-client/lib/contexts');
+const Injector = require('web-ledger-client/lib/Injector');
+const injector = new Injector();
+
+const jsonld = injector.use('jsonld');
+const documentLoader = jsonld.documentLoader;
+
+jsonld.documentLoader = async url => {
+  if(url in contexts) {
+    return {
+      contextUrl: null,
+      documentUrl: url,
+      document: contexts[url]
+    };
+  }
+  return documentLoader(url);
+};
+
+injector.use('jsonld', jsonld);
+const jsigs = require('jsonld-signatures');
+jsigs.use('jsonld', jsonld);
+injector.use('jsonld-signatures', jsigs);
+injector.use(
+  'attachEd25519SignatureProof', lib.proofs.attachEd25519SignatureProof);
+injector.use('attachEquihashProof', lib.proofs.attachEquihashProof);
+
+injector.env = {nodejs: true};
+
+function __log(yargs, level, message, ...args) {
+  if(!yargs.quiet && yargs.verbose >= level) {
+    console.log(message, ...args);
+  }
+}
+
+function _log(yargs, message, ...args) {
+  return __log(yargs, 0, '[LOG] ' + message, ...args);
+}
+
+function _info(yargs, message, ...args) {
+  return __log(yargs, 1, '[INFO] ' + message, ...args);
+}
+
+function _debug(yargs, message, ...args) {
+  return __log(yargs, 2, '[DEBUG] ' + message, ...args);
+}
+
+function _error(yargs, message, ...args) {
+  return __log(yargs, 0, '[ERROR] ' + message, ...args);
+}
+
+function _setupRemoteCommand(yargs) {
+  return yargs
+    .option('mode', {
+      alias: 'm',
+      describe: 'Web Ledger mode',
+      type: 'string',
+      nargs: 1,
+      default: 'dev'
+    })
+    .option('hostname', {
+      describe: 'Web Ledger hostname',
+      type: 'string',
+      nargs: 1
+    });
+}
+
+function _setupFilenameCommand(yargs) {
+  return yargs
+    .option('record', {
+      alias: 'r',
+      describe: 'File containing the record that will be sent to the ledger',
+      type: 'string'
+    })
+    .option('config', {
+      alias: 'c',
+      describe: 'File containing the config',
+      type: 'string'
+    });
+}
+
+// add examples if tagged for a command.  "main" is main app.
+function _setupExamples(yargs, cmd) {
+  function example(cmds, ...rest) {
+    if(cmds.includes(cmd)) {
+      yargs.example(...rest);
+    }
+  }
+  example(
+    ['main'],
+    '$0 COMMAND -h',
+    'Show help and more examples for COMMAND');
+  example(
+    ['main', 'create'],
+    '$0 create -r record.json -c config.json',
+    'Create record from JSON file');
+  example(
+    ['main', 'encrypt'],
+    '$0 encrypt',
+    'Encrypt the private key file secured by a password');
+  example(
+    ['main', 'get'],
+    '$0 get --hostname webledger.localhost:1872 urn:example:1234',
+    'Get record by ID');
+}
+
+async function _getData(file) {
+  if(!file) {
+    throw new Error('File not found;');
+  }
+  let data;
+  if(file === '-') {
+    const getStdin = require('get-stdin');
+    data = await getStdin();
+  } else {
+    data = await util.promisify(fs.readFile)(file, 'utf8');
+  }
+  return JSON.parse(data);
+}
+
+async function _attachProof({operation, proofs}) {
+  const proofMap = {
+    'EquihashProof2018': 'attachEquihashProof',
+    'Ed25519Signature2018': 'attachEd25519SignatureProof',
+  };
+
+  const operations = await Promise.all(
+    proofs.map(async proof => {
+      const {type, ...options} = proof;
+      const func = proofMap[type];
+      return await injector.use(func)({operation, options});
+    }));
+
+  // reduce all proofs into a single field
+  operation = operations.reduce((acc, currOperation) => {
+    let proof;
+    if(!acc.proof) {
+      proof = currOperation.proof;
+    } else if(acc.proof && Array.isArray(acc.proof)) {
+      proof = acc.proof.push(currOperation.proof);
+    } else if(acc.proof && typeof acc.proof === 'object') {
+      proof = [acc.proof, currOperation.proof];
+    }
+    return {
+      ...currOperation,
+      proof
+    };
+  }, {});
+
+  return operation;
+}
+
+async function _create(yargs) {
+  const record = await _getData(yargs.record);
+  const config = await _getData(yargs.config);
+
+  const {hostname} = config;
+
+  const client = new WebLedgerClient({
+    injector,
+    hostname: yargs.hostname || hostname,
+    mode: yargs.mode,
+    logger: console
+  });
+
+  _log(yargs, `Record ID: ${record.id}`);
+  _log(yargs, 'Preparing to create a Record on Ledger...');
+
+  if(!record['@context']) {
+    throw new Error('Context not found on record', {record});
+  }
+
+  let operation = WebLedgerClient.wrap({record, operationType: 'create'});
+
+  let {proofs} = config;
+  proofs = proofs.map(async proof => {
+    let privateKeyBase58;
+    if(proof.privateKeyBase58Path) {
+      const jwe = await _getData(proof.privateKeyBase58Path);
+      const questions = [
+        {
+          type: 'password',
+          name: 'password',
+          message: 'Please enter the password used for encryption'
+        }
+      ];
+      const {password} = await inquirer.prompt(questions);
+      const key = await lib.crypto.unwrapWithPassword({password, jwe});
+      privateKeyBase58 = bs58.encode(key);
+    }
+    return {
+      ...proof,
+      privateKeyBase58,
+      mode: yargs.mode
+    };
+  });
+  proofs = await Promise.all(proofs);
+  operation = await _attachProof({operation, proofs});
+
+  try {
+    const response = await client.send({operation});
+    if(response.status === 204) {
+      _log(yargs, 'Record was sent successfully to the Ledger');
+    } else {
+      _log(yargs, 'Failed to send record to the Ledger', response.data);
+    }
+  } catch(e) {
+    const {response} = e;
+    if(!response) {
+      throw new Error('Failed to send record to the Ledger', e);
+    }
+    const error = JSON.stringify(response.data, null, 2);
+    _error(yargs, 'Failed to send record to the Ledger', error);
+  }
+  _info(yargs, 'create', {
+    injector,
+    hostname: yargs.hostname || hostname,
+    id: record.id,
+    record: yargs.record,
+    config: yargs.config
+  });
+}
+
+async function _encrypt(yargs) {
+  const questions = [
+    {
+      type: 'input',
+      name: 'keyFilePath',
+      message: 'Please specify the path to the key file'
+    },
+    {
+      type: 'password',
+      name: 'password',
+      message: 'Please enter the password you wish to use for encryption'
+    }
+  ];
+  const {password, keyFilePath} = await inquirer.prompt(questions);
+  const {privateKeyBase58} = await _getData(keyFilePath);
+  const key = bs58.decode(privateKeyBase58);
+  const jwe = await lib.crypto.wrapWithPassword({password, key});
+  const data = JSON.stringify(jwe, null, 2);
+  util.promisify(fs.writeFile)('privateKeyBase58.encrypted.json', data);
+}
+
+async function _get(yargs) {
+  const id = yargs.id;
+  let config = {};
+  if(yargs.config) {
+    config = await _getData(yargs.config);
+  }
+
+  const {hostname} = config;
+
+  const client = new WebLedgerClient({
+    hostname: yargs.hostname || hostname,
+    mode: yargs.mode,
+    logger: console
+  });
+  _info(yargs, 'get', {
+    hostname: yargs.hostname || hostname,
+    id: yargs.id
+  });
+  const result = await client.get({id});
+  if(!yargs.quiet) {
+    console.log(JSON.stringify(result, null, 2));
+  }
+}
+
+// setup the command line
+yargs
+  // accept env vars
+  .env('WEB_LEDGER_CLIENT')
+  .command(['create'],
+    'Create record',
+    yargs => {
+      _setupRemoteCommand(yargs);
+      _setupFilenameCommand(yargs);
+      _setupExamples(yargs, 'create');
+    },
+    argv => _create(argv))
+  .command(['encrypt'],
+    'Encrypt private key',
+    yargs => {
+      _setupRemoteCommand(yargs);
+      _setupFilenameCommand(yargs);
+      _setupExamples(yargs, 'encrypt');
+    },
+    argv => _encrypt(argv))
+  .command(['get <id>'],
+    'Get record',
+    yargs => {
+      _setupRemoteCommand(yargs);
+      _setupExamples(yargs, 'get');
+      yargs
+        .positional('id', {
+          describe: 'ID of record',
+          type: 'string'
+        });
+    },
+    argv => _get(argv))
+
+  // general
+  .demandCommand(1, 'Please specify a command to execute.')
+  .recommendCommands()
+  .strict()
+  .help('h')
+  .alias('h', 'help')
+  .count('v')
+  .describe('v', 'Increase verbosity')
+  .alias('v', 'verbose')
+  .describe('q', 'Quiet output')
+  .boolean('q')
+  .alias('q', 'quiet');
+
+_setupExamples(yargs, 'main');
+
+// parse
+yargs.argv;
+
+process.on('unhandledRejection', error => {
+  console.error(error);
+});

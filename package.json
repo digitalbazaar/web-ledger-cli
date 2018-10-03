@@ -1,0 +1,30 @@
+{
+  "name": "veres-one-admin-client",
+  "version": "0.0.1",
+  "description": "An admin client for the Veres One Ledger",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/digitalbazaar/veres-one-admin-client.git"
+  },
+  "author": "",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/digitalbazaar/veres-one-admin-client/issues"
+  },
+  "homepage": "https://github.com/digitalbazaar/veres-one-admin-client#readme",
+  "dependencies": {
+    "base64url": "^3.0.0",
+    "bs58": "^4.0.1",
+    "equihash-signature": "digitalbazaar/equihash-signature#master",
+    "inquirer": "^6.2.0",
+    "jsonld": "^1.1.0",
+    "jsonld-signatures": "^2.3.1",
+    "veres-one-context": "github:digitalbazaar/veres-one-context#elector-pool-support",
+    "web-ledger-client": "digitalbazaar/web-ledger-client#generalize",
+    "yargs": "^12.0.2"
+  }
+}
