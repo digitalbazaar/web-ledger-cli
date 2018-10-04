@@ -1,4 +1,4 @@
-# veres-one-admin-client ChangeLog
+# web-ledger-cli ChangeLog
 
 ## 0.0.1
 

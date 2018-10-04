@@ -1,8 +1,8 @@
-# Veres One Admin Client _(veres-one-admin-client)_
+# Web Ledger CLI _(web-ledger-cli)_
 
-[![Build Status](https://travis-ci.org/digitalbazaar/veres-one-admin-client.png?branch=master)](https://travis-ci.org/digitalbazaar/veres-one-admin-client)
+[![Build Status](https://travis-ci.org/digitalbazaar/web-ledger-cli.png?branch=master)](https://travis-ci.org/digitalbazaar/web-ledger-cli)
 
-> An admin client for the Veres One Ledger
+> An CLI tool to interact with Web Ledgers
 
 ## Table of Contents
 
@@ -35,7 +35,7 @@ Requires Node.js 8.3+
 To install via NPM:
 
 ```
-npm install veres-one-admin-client
+npm install web-ledger-cli
 ```
 
 ## Usage
