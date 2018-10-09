@@ -9,6 +9,7 @@
 const bs58 = require('bs58');
 const fs = require('fs');
 const inquirer = require('inquirer');
+const path = require('path');
 const util = require('util');
 const yargs = require('yargs');
 const WebLedgerClient = require('web-ledger-client').client;
@@ -253,7 +254,9 @@ async function _encrypt(yargs) {
   const key = bs58.decode(privateKeyBase58);
   const jwe = await lib.crypto.wrapWithPassword({password, key});
   const data = JSON.stringify(jwe, null, 2);
-  util.promisify(fs.writeFile)('privateKeyBase58.encrypted.json', data);
+  const outputPath = path.join(
+    path.dirname(keyFilePath), 'privateKeyBase58.encrypted.json');
+  util.promisify(fs.writeFile)(outputPath, data);
 }
 
 async function _get(yargs) {
