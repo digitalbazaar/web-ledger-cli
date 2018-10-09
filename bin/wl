@@ -204,7 +204,7 @@ async function _create(yargs) {
       throw new Error('Failed to send record to the Ledger', e);
     }
     const error = JSON.stringify(response.data, null, 2);
-    logger(yargs, 'log', 'Failed to send record to the Ledger', error);
+    logger(yargs, 'error', 'Failed to send record to the Ledger', error);
   }
   logger(yargs, 'info', 'create', {
     injector,
@@ -323,7 +323,7 @@ function logger(yargs, level, message, ...args) {
     log: 0,
     info: 1,
     debug: 2,
-    error: 3
+    error: 0
   };
 
   if(!yargs.quiet && yargs.verbose >= levelMap[level]) {
