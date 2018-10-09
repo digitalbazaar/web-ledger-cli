@@ -13,7 +13,8 @@ const path = require('path');
 const util = require('util');
 const yargs = require('yargs');
 const WebLedgerClient = require('web-ledger-client').client;
-const lib = require('../lib');
+const wlProofs = require('../lib/proofs');
+const wlCrypto = require('../lib/crypto');
 const contexts = require('web-ledger-client/lib/contexts');
 const Injector = require('web-ledger-client/lib/Injector');
 const injector = new Injector();
@@ -32,37 +33,14 @@ jsonld.documentLoader = async url => {
   return documentLoader(url);
 };
 
-injector.use('jsonld', jsonld);
 const jsigs = require('jsonld-signatures');
 jsigs.use('jsonld', jsonld);
 injector.use('jsonld-signatures', jsigs);
 injector.use(
-  'attachEd25519SignatureProof', lib.proofs.attachEd25519SignatureProof);
-injector.use('attachEquihashProof', lib.proofs.attachEquihashProof);
+  'attachEd25519SignatureProof', wlProofs.attachEd25519SignatureProof);
+injector.use('attachEquihashProof', wlProofs.attachEquihashProof);
 
 injector.env = {nodejs: true};
-
-function __log(yargs, level, message, ...args) {
-  if(!yargs.quiet && yargs.verbose >= level) {
-    console.log(message, ...args);
-  }
-}
-
-function _log(yargs, message, ...args) {
-  return __log(yargs, 0, '[LOG] ' + message, ...args);
-}
-
-function _info(yargs, message, ...args) {
-  return __log(yargs, 1, '[INFO] ' + message, ...args);
-}
-
-function _debug(yargs, message, ...args) {
-  return __log(yargs, 2, '[DEBUG] ' + message, ...args);
-}
-
-function _error(yargs, message, ...args) {
-  return __log(yargs, 0, '[ERROR] ' + message, ...args);
-}
 
 function _setupRemoteCommand(yargs) {
   return yargs
@@ -178,8 +156,8 @@ async function _create(yargs) {
     logger: console
   });
 
-  _log(yargs, `Record ID: ${record.id}`);
-  _log(yargs, 'Preparing to create a Record on Ledger...');
+  logger(yargs, 'log', `Record ID: ${record.id}`);
+  logger(yargs, 'log', 'Preparing to create a Record on Ledger...');
 
   if(!record['@context']) {
     throw new Error('Context not found on record', {record});
@@ -200,7 +178,7 @@ async function _create(yargs) {
         }
       ];
       const {password} = await inquirer.prompt(questions);
-      const key = await lib.crypto.unwrapWithPassword({password, jwe});
+      const key = await wlCrypto.unwrapWithPassword({password, jwe});
       privateKeyBase58 = bs58.encode(key);
     }
     return {
@@ -215,9 +193,10 @@ async function _create(yargs) {
   try {
     const response = await client.send({operation});
     if(response.status === 204) {
-      _log(yargs, 'Record was sent successfully to the Ledger');
+      logger(yargs, 'log', 'Record was sent successfully to the Ledger');
     } else {
-      _log(yargs, 'Failed to send record to the Ledger', response.data);
+      const {data} = response;
+      logger(yargs, 'log', 'Failed to send record to the Ledger', data);
     }
   } catch(e) {
     const {response} = e;
@@ -225,9 +204,9 @@ async function _create(yargs) {
       throw new Error('Failed to send record to the Ledger', e);
     }
     const error = JSON.stringify(response.data, null, 2);
-    _error(yargs, 'Failed to send record to the Ledger', error);
+    logger(yargs, 'log', 'Failed to send record to the Ledger', error);
   }
-  _info(yargs, 'create', {
+  logger(yargs, 'info', 'create', {
     injector,
     hostname: yargs.hostname || hostname,
     id: record.id,
@@ -252,7 +231,7 @@ async function _encrypt(yargs) {
   const {password, keyFilePath} = await inquirer.prompt(questions);
   const {privateKeyBase58} = await _getData(keyFilePath);
   const key = bs58.decode(privateKeyBase58);
-  const jwe = await lib.crypto.wrapWithPassword({password, key});
+  const jwe = await wlCrypto.wrapWithPassword({password, key});
   const data = JSON.stringify(jwe, null, 2);
   const outputPath = path.join(
     path.dirname(keyFilePath), 'privateKeyBase58.encrypted.json');
@@ -273,7 +252,7 @@ async function _get(yargs) {
     mode: yargs.mode,
     logger: console
   });
-  _info(yargs, 'get', {
+  logger(yargs, 'info', 'get', {
     hostname: yargs.hostname || hostname,
     id: yargs.id
   });
@@ -337,3 +316,17 @@ yargs.argv;
 process.on('unhandledRejection', error => {
   console.error(error);
 });
+
+// helper functions
+function logger(yargs, level, message, ...args) {
+  const levelMap = {
+    log: 0,
+    info: 1,
+    debug: 2,
+    error: 3
+  };
+
+  if(!yargs.quiet && yargs.verbose >= levelMap[level]) {
+    console.log(`[${level.toUpperCase()}] ${message}`, ...args);
+  }
+}
