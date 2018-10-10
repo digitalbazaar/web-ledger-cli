@@ -88,6 +88,10 @@ function _setupExamples(yargs, cmd) {
     '$0 create -r record.json -c config.json',
     'Create record from JSON file');
   example(
+    ['main', 'update'],
+    '$0 update -r patch.json -c config.json',
+    'Update record from JSON file');
+  example(
     ['main', 'encrypt'],
     '$0 encrypt',
     'Encrypt the private key file secured by a password');
@@ -137,7 +141,7 @@ async function _attachProof({operation, proofs}) {
   return operation;
 }
 
-async function _create(yargs) {
+async function _send(yargs, operationType) {
   const record = await _getData(yargs.record);
   const config = await _getData(yargs.config);
 
@@ -150,14 +154,21 @@ async function _create(yargs) {
     logger: console
   });
 
-  logger(yargs, 'log', `Record ID: ${record.id}`);
-  logger(yargs, 'log', 'Preparing to create a Record on Ledger...');
+  if(operationType === 'create') {
+    logger(yargs, 'log', `Record ID: ${record.id}`);
+    logger(yargs, 'log', 'Preparing to create a Record on Ledger...');
+  } else if(operationType === 'update') {
+    logger(yargs, 'log', `Record ID: ${record.target}`);
+    logger(yargs, 'log', 'Preparing to update a Record on Ledger...');
+  } else {
+    throw new Error('Invalid operationType');
+  }
 
   if(!record['@context']) {
     throw new Error('Context not found on record', {record});
   }
 
-  let operation = WebLedgerClient.wrap({record, operationType: 'create'});
+  let operation = WebLedgerClient.wrap({record, operationType});
 
   let {proofs} = config;
   proofs = proofs.map(async proof => {
@@ -267,7 +278,7 @@ yargs
       _setupFilenameCommand(yargs);
       _setupExamples(yargs, 'create');
     },
-    argv => _create(argv))
+    argv => _send(argv, 'create'))
   .command(['encrypt'],
     'Encrypt private key',
     yargs => {
@@ -288,6 +299,14 @@ yargs
         });
     },
     argv => _get(argv))
+  .command(['update'],
+    'Update record',
+    yargs => {
+      _setupRemoteCommand(yargs);
+      _setupFilenameCommand(yargs);
+      _setupExamples(yargs, 'update');
+    },
+    argv => _send(argv, 'update'))
 
   // general
   .demandCommand(1, 'Please specify a command to execute.')
