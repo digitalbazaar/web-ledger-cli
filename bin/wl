@@ -93,7 +93,7 @@ function _setupExamples(yargs, cmd) {
     'Encrypt the private key file secured by a password');
   example(
     ['main', 'get'],
-    '$0 get --hostname webledger.localhost:1872 urn:example:1234',
+    '$0 get \\ \n --hostname webledger.com \\ \n urn:test:1234',
     'Get record by ID');
 }
 
