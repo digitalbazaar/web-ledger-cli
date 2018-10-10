@@ -2,7 +2,10 @@
   "name": "web-ledger-cli",
   "version": "0.0.1",
   "description": "An CLI tool to interact with Web Ledgers",
-  "main": "index.js",
+  "main": "./bin/wl",
+  "bin": {
+    "wl": "./bin/wl"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
