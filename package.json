@@ -1,21 +1,21 @@
 {
-  "name": "veres-one-admin-client",
+  "name": "web-ledger-cli",
   "version": "0.0.1",
-  "description": "An admin client for the Veres One Ledger",
+  "description": "An CLI tool to interact with Web Ledgers",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/digitalbazaar/veres-one-admin-client.git"
+    "url": "git+https://github.com/digitalbazaar/web-ledger-cli.git"
   },
   "author": "",
   "license": "BSD-3-Clause",
   "bugs": {
-    "url": "https://github.com/digitalbazaar/veres-one-admin-client/issues"
+    "url": "https://github.com/digitalbazaar/web-ledger-cli/issues"
   },
-  "homepage": "https://github.com/digitalbazaar/veres-one-admin-client#readme",
+  "homepage": "https://github.com/digitalbazaar/web-ledger-cli#readme",
   "dependencies": {
     "base64url": "^3.0.0",
     "bs58": "^4.0.1",
