@@ -101,13 +101,7 @@ async function _getData(file) {
   if(!file) {
     throw new Error('File not found;');
   }
-  let data;
-  if(file === '-') {
-    const getStdin = require('get-stdin');
-    data = await getStdin();
-  } else {
-    data = await util.promisify(fs.readFile)(file, 'utf8');
-  }
+  const data = await util.promisify(fs.readFile)(file, 'utf8');
   return JSON.parse(data);
 }
 
@@ -215,7 +209,7 @@ async function _create(yargs) {
   });
 }
 
-async function _encrypt(yargs) {
+async function _encrypt() {
   const questions = [
     {
       type: 'input',
