@@ -1,0 +1,18 @@
+{
+  "hostname": "genesis.veres.one.localhost:42443",
+  "proofs": [
+    {
+      "type": "EquihashProof2018",
+      "equihashParameterK": 3,
+      "equihashParameterN": 64
+    },
+    {
+      "type": "Ed25519Signature2018",
+      "capability": "did:v1:test:nym:aKjhx7cWiqVSNxz5n8yYh3Lqs1pqRSbziRC5pCEC9DF#ocap-invoke-key-1",
+      "capabilityAction": "UpdateDidDocument",
+      "creator": "did:v1:test:nym:aKjhx7cWiqVSNxz5n8yYh3Lqs1pqRSbziRC5pCEC9DF",
+      "privateKeyBase58Path": "/work/gannan/web-ledger-cli/examples/privateKeyBase58.encrypted.json",
+      "proofPurpose": "capabilityInvocation"
+    }
+  ]
+}
