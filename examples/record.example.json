@@ -1,9 +1,0 @@
-{
-  "id": "did:v1:test:uuid:f557c7a9-dc0b-4a20-9568-98eb95a-1",
-  "@context": "https://w3id.org/veres-one/v1",
-  "electorPool": [{
-    "id": "did:url",
-    "type": ["Elector", "RecoveryElector"],
-    "capability": "did:url"
-  }]
-}
