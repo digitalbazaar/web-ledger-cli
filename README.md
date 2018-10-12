@@ -101,7 +101,7 @@ The CLI tool requires the use of a config file for creating and updating records
 }
 ```
 
-Note that the `Ed25519Signature2018` signature suite does NOT specify the `privateKeyBase58` but rather the `privateKeyBase58Path`. It is good security practice to never leave one's private key in plain text. This tool requires one to provide the path to their encrypted private key as the value to the `privateKeyBase58Path` property. More information on how to create the desired encrypted private key file can be found in section [foo](#foo). 
+Note that the `Ed25519Signature2018` signature suite does NOT specify the `privateKeyBase58` but rather the `privateKeyBase58Path`. It is good security practice to never leave one's private key in plain text. This tool requires one to provide the path to their encrypted private key as the value to the `privateKeyBase58Path` property. More information on how to create the desired encrypted private key file can be found in section [Encrypting Your Private Key](#encrypting-your-private-key).
 
 ### Record File
 The CLI tool requires the use of a record file that contains the record or record patch in order to create or update a record respectively.
@@ -153,7 +153,7 @@ material. This file will be encrypted and then deleted.
 ```
 
 ### Encrypting Your Private Key
-1. Extract the necessary private key material that is needed to succesfully create your Linked Data Signature. Create a [PrivateKeyBase58](#PrivateKeyBase58) file using the private key material as the value for `privateKeyBase58`.
+1. Extract the necessary private key material that is needed to succesfully create your Linked Data Signature. Create a [PrivateKeyBase58](#privatekeybase58-file) file using the private key material as the value for `privateKeyBase58`.
 2. Run the command
 ``` bash
 $ wl encrypt
