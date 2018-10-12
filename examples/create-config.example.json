@@ -8,10 +8,10 @@
     },
     {
       "type": "Ed25519Signature2018",
-      "capability": "did:v1:test:nym:aKjhx7cWiqVSNxz5n8yYh3Lqs1pqRSbziRC5pCEC9DF#ocap-invoke-key-1",
+      "capability": "did:v1:test:nym:aKjhx7cWiqVSNxz5n8yYh3Lqs1pqRSbziRC5pCEC9DF",
       "capabilityAction": "RegisterDid",
-      "creator": "did:v1:test:nym:aKjhx7cWiqVSNxz5n8yYh3Lqs1pqRSbziRC5pCEC9DF",
-      "privateKeyBase58Path": "/work/gannan/web-ledger-cli/examples/privateKeyBase58.encrypted.json",
+      "creator": "did:v1:test:nym:aKjhx7cWiqVSNxz5n8yYh3Lqs1pqRSbziRC5pCEC9DF#ocap-invoke-key-1",
+      "privateKeyBase58Path": "/home/user/web-ledger-cli/examples/privateKeyBase58.encrypted.json",
       "proofPurpose": "capabilityInvocation"
     }
   ]
