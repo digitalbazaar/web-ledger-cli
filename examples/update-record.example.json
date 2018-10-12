@@ -1,6 +1,6 @@
 {
   "@context": "https://w3id.org/veres-one/v1",
-  "target": "did:v1:test:uuid:f557c7a9-dc0b-4a20-9568-98eb95g-0",
+  "target": "did:v1:test:uuid:2d909c9c-d279-495e-b471-5d0583f6cfb3",
   "sequence": 0,
   "patch": [{
     "op": "add",
@@ -11,7 +11,7 @@
         "Elector",
         "RecoveryElector"
       ],
-      "capability": "did:url"
+      "capability": "did:v1:nym:BcNkgGmGEpCGSJSMPB4BvWvwVM6YeTR52BSWcZTbzU23"
     }
   }]
 }
